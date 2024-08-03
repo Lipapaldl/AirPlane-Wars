@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<style>
+    .container{
+        width: 1086px;
+        height: 780px;
+        background-image: url("./img/background_1.png");
+    }
+    .plane{
+        position: absolute; 
+    }
+</style>
+<body>
+<div id = "container" class="container" onmousemove="mouseMove()">
+    <img id = "plane" src="img/plane.gif" class="plane" />
+</div>
+</body>
+<script>
+
+    let plane = document.getElementById("plane")
+    let container = document.getElementById("container")
+
+    //子弹的X和Y坐标的变量
+    let currentBulletX = 0;
+    let currentBulletY = 0;
+
+    //定义所有没有被销毁的 子弹数组和敌机数组
+    let bulletArray = new Array();
+    let enemyArray = new Array();
+
+    //创建一个子弹类
+    class Bullets{
+        bulletImg;//子弹图标
+        positionX;//子弹横坐标数值
+        positionY;//子弹纵坐标数值
+        time;
+
+        //构造器
+        constructor(bx,by) {
+            //1.创建子弹图形
+            this.bulletImg = document.createElement("img");
+            this.bulletImg.src = "img/bullet1.png";
+            this.bulletImg.style.position = "absolute"; //绝对布局：子弹才能自由移动
+            this.bulletImg.style.left = bx + "px";
+            this.bulletImg.style.top = by + "px";
+            this.positionY = by
+            this.positionX = bx
+            container.appendChild(this.bulletImg);
+            this.move()
+        }
+        //子弹移动
+        move(){
+                 this.time = setInterval(()=>{
+                 this.positionY -= 10
+                 this.bulletImg.style.top = this.positionY + "px"
+                 //子弹销毁
+                 if(this.positionY <= 0){
+                     this.destoryed()
+                 }
+            },50)
+        }
+
+        //销毁子弹
+        destroyed(){
+            container.removeChild(this.bulletImg)
+            clearInterval(this.time)
+        }
+    }
+    function createBullets() {
+        //每隔 x 秒生成一个子弹
+        setInterval(() =>{
+            let bullet = new Bullets(currentBulletX,currentBulletY)
+            bulletArray.push(bullet)
+        },500)
+    }
+
+    //创建敌机
+    class Enemy{
+        enemyImg;
+        positionY = 0;
+        positionX;
+        time;
+
+        constructor(ex) {
+            this.enemyImg = document.createElement("img");
+            this.enemyImg.src = "img/enemy1_fly_1.png";
+            this.enemyImg.style.position = "absolute";
+            this.enemyImg.style.left = ex + "px"
+            this.positionX = ex
+            container.appendChild(this.enemyImg);
+            this.fly();
+        }
+        //敌机自主移动
+        fly(){
+            this.time = setInterval(()=>{
+                this.positionY += 10;
+                //出界销毁
+                if(this.positionY>=780){
+                    this.destroyed()
+                }
+                this.enemyImg.style.top = this.positionY + "px";
+            },100)
+        }
+
+        //销毁飞机
+        destroyed(){
+            container.removeChild(this.enemyImg)
+            clearInterval(this.time)
+        }
+    }
+
+    function createEnemy(){
+        //每隔 x 秒生成一个敌机
+        setInterval(()=> {
+            let ex = Math.random()*1086
+            let enemy = new Enemy(ex)
+            enemyArray.push(enemy)
+        },1000)
+    }
+
+    //鼠标移动时间
+    function mouseMove(){
+        let x = window.event.clientX;
+        let y = window.event.clientY;
+        // console.log(x+"--"+y)
+
+        //获取飞机的宽和高
+        let planeWidth = plane.offsetWidth
+        let planeHeight = plane.offsetHeight
+
+        //飞机跟随鼠标移动
+        x = x - planeWidth/2
+        y = y - planeHeight/2
+        if(x <= 1086 - planeWidth && x >= 0) plane.style.left = x + "px";
+        if(y <= 780 - planeHeight&& y >= 0)plane.style.top = y + "px";
+
+        currentBulletX = x + planeWidth / 2
+        currentBulletY = y
+    }
+
+    //检测子弹与敌机之间是否有重叠坐标
+    setInterval(function boom() {
+       for(let i = bulletArray.length - 1; i >=0; i --){
+           let bullet = bulletArray[i];
+           let bx = bullet.positionX;
+           let by = bullet.positionY;
+           for(let j = enemyArray.length - 1; j >= 0; j--){
+               let enemy = enemyArray[j];
+               let ex = enemy.positionX;
+               let ey = enemy.positionY;
+               let enemyWidth = enemy.enemyImg.offsetWidth;
+               let enemyHeight = enemy.enemyImg.offsetHeight;
+               if(bx>=ex && bx <= ex + enemyWidth && by >= ey && by<=ey+enemyHeight){
+                   bulletArray.splice(i,1);
+                   bullet.destroyed();
+                   enemyArray.splice(j,1);
+                   enemy.destroyed();
+                   break;
+               }
+           }
+       }
+    },10)
+    createBullets()
+    createEnemy()
+
+</script>
+</html>
